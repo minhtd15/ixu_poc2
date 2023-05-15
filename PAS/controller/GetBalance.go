@@ -13,7 +13,7 @@ func GetBalance(userID int) (float64, error) {
 
 	// logical solve
 	var balance float64
-	err = db.QueryRow("select BALANCE from MINHTD5.PAYMENTDB where USERID = ?", userID).Scan(&balance)
+	err = db.QueryRow("select BALANCE from SYSTEM.PAYMENTDB where USERID = ?", userID).Scan(&balance)
 	if err != nil {
 		tx.Rollback()
 		fmt.Println(err)

@@ -21,12 +21,13 @@ func OrderHandler(w http.ResponseWriter, r *http.Request) {
 	inStock, err := controller.GetQuantityInStock(order.ProductID)
 	priceEach, err := controller.GetPriceEach(order.ProductID)
 
+	// check the quantity in stock
 	if order.AmountOrder > inStock {
 		w.Write([]byte("The products in stock are not enough"))
 		return
 	}
 
-	// if there is enough quantity in stock, mutiply the total amount of money that the customer want to buy
+	// if there is enough quantity in stock, multiply the total amount of money that the customer want to buy
 	var totalOrder = entity.BillRequest{
 		UserID:     order.UserID,
 		TotalOrder: float64(inStock) * priceEach,
@@ -39,7 +40,7 @@ func OrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = client.RabbitSender(orderBytes)
+	err = client.RabbitSender(orderBytes, w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

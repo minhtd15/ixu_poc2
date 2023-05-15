@@ -19,7 +19,8 @@ func HandleDeduct(userID int, amount float64) error {
 func deductBalance(userID int, amount float64) error {
 	fmt.Println("da tru")
 	balance, err := controller.GetBalance(userID)
-	fmt.Printf("da tru %v and %v \n", amount, balance)
+
+	fmt.Printf("Khách hàng muốn mua hàng có giá trị %v và số dư tài khoản của khách hàng là %v \n", amount, balance)
 	if err != nil {
 		return UserNotFound
 	}

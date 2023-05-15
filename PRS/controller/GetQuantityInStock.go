@@ -3,19 +3,23 @@ package controller
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/godror/godror"
 )
 
 func GetQuantityInStock(productID string) (int, error) {
 	db, err := ConnectToDB()
 
-	fmt.Println("COnnected to Oracle")
+	fmt.Println("Connected to Oracle yo yo")
 	tx, err := db.Begin()
+	fmt.Println("hello this is here")
 
 	// logical solving
 	var inStock int
 	err = db.QueryRow("SELECT QuantityInStock from SYSTEM.STOCK where productID = ?", productID).Scan(&inStock)
+
+	fmt.Println("stocky baby")
 	if err != nil {
-		tx.Rollback()
+		//tx.Rollback()
 		return 0, fmt.Errorf("Failed to check the Quantity in Stock: %v", err)
 	}
 
@@ -33,12 +37,6 @@ func ConnectToDB() (*sql.DB, error) {
 		return db, nil
 	}
 	defer db.Close()
-
-	//Thực hiện ping database để đảm bảo kết nối thành công
-	err = db.Ping()
-	if err != nil {
-		return nil, err
-	}
 
 	return db, nil
 }
