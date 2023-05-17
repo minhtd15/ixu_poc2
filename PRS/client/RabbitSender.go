@@ -30,7 +30,7 @@ func RabbitSender(orderBytes []byte, w http.ResponseWriter) error {
 
 	// declare queue to receive message from service order
 	q, err := ch.QueueDeclare(
-		"order_queue",
+		"order_sending_queue",
 		false,
 		false,
 		false,

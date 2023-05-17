@@ -1,7 +1,7 @@
-package service
+package controller
 
 import (
-	"PAS/controller"
+	"PAS/service"
 	"fmt"
 	"log"
 )
@@ -18,7 +18,7 @@ func HandleDeduct(userID int, amount float64) error {
 
 func deductBalance(userID int, amount float64) error {
 	fmt.Println("da tru")
-	balance, err := controller.GetBalance(userID)
+	balance, err := service.GetBalance(userID)
 
 	fmt.Printf("Khách hàng muốn mua hàng có giá trị %v và số dư tài khoản của khách hàng là %v \n", amount, balance)
 	if err != nil {
@@ -31,7 +31,7 @@ func deductBalance(userID int, amount float64) error {
 	balance -= amount
 	fmt.Println(balance)
 
-	balance, err = controller.UpdateBalance(balance, userID)
+	balance, err = service.UpdateBalance(balance, userID)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package controller
+package service
 
 import (
 	"database/sql"
@@ -9,15 +9,13 @@ import (
 func GetQuantityInStock(productID string) (int, error) {
 	db, err := ConnectToDB()
 
-	fmt.Println("Connected to Oracle yo yo")
+	fmt.Println("Connected to Oracle")
 	tx, err := db.Begin()
-	fmt.Println("hello this is here")
 
 	// logical solving
 	var inStock int
 	err = db.QueryRow("SELECT QuantityInStock from SYSTEM.STOCK where productID = ?", productID).Scan(&inStock)
 
-	fmt.Println("stocky baby")
 	if err != nil {
 		//tx.Rollback()
 		return 0, fmt.Errorf("Failed to check the Quantity in Stock: %v", err)

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"PRS/service"
+	"PRS/controller"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -9,6 +9,6 @@ import (
 
 func main() {
 	router := mux.NewRouter()
-	router.HandleFunc("/orders", service.OrderHandler).Methods("POST")
+	router.HandleFunc("/orders", controller.OrderHandler).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

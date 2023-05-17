@@ -2,8 +2,8 @@ package main
 
 import (
 	"PAS/client"
+	"PAS/controller"
 	"PAS/entity"
-	"PAS/service"
 	"database/sql"
 	"encoding/json"
 	_ "github.com/gorilla/mux"
@@ -30,7 +30,7 @@ func main() {
 			}
 
 			// Deduct Balance from user's account
-			err = service.HandleDeduct(req.UserID, req.TotalOrder)
+			err = controller.HandleDeduct(req.UserID, req.TotalOrder)
 
 			// send a success message to RabbitMQ queue
 			successResp := entity.PaymentResponse{
