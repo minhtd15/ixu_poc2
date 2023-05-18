@@ -36,7 +36,7 @@ func OrderHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(result)
-
+		return
 	}
 
 	// if there is enough quantity in stock, multiply the total amount of money that the customer want to buy

@@ -4,7 +4,10 @@ import (
 	"PAS/service"
 	"fmt"
 	"log"
+	"sync"
 )
+
+var mu sync.Mutex
 
 func HandleDeduct(userID int, amount float64) error {
 	// Deduct
@@ -17,6 +20,10 @@ func HandleDeduct(userID int, amount float64) error {
 }
 
 func deductBalance(userID int, amount float64) error {
+	// sử dụng lock để đảm bảo chỉ có một goroutine có thể thực hiện lệnh trừ tiền tại một thời điểm.
+	mu.Lock()
+	defer mu.Unlock()
+
 	fmt.Println("da tru")
 	balance, err := service.GetBalance(userID)
 
