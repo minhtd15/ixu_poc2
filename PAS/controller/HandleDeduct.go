@@ -1,22 +1,44 @@
 package controller
 
 import (
+	"PAS/entity"
 	"PAS/service"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"sync"
 )
 
 var mu sync.Mutex
 
-func HandleDeduct(userID int, amount float64) error {
-	// Deduct
-	if err := deductBalance(userID, amount); err != nil {
-		return fmt.Errorf("Failed to deduct and update balance: %v", err)
+//func HandleDeduct(userID int, amount float64) error {
+//	// Deduct
+//	if err := deductBalance(userID, amount); err != nil {
+//		return fmt.Errorf("Failed to deduct and update balance: %v", err)
+//	}
+//	// return result
+//	log.Printf("Deducted %v from account %v", amount, userID)
+//	return nil
+//}
+
+func HandleDeduct(w http.ResponseWriter, r *http.Request) {
+	var req entity.DeductRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Fatalf("Error converting json to object: %v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+	// Deduct
+	if err := deductBalance(req.UserID, req.TotalOrder); err != nil {
+		log.Fatalf("Error deducting balance: %v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	// return result
-	log.Printf("Deducted %v from account %v", amount, userID)
-	return nil
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Order successful"))
 }
 
 func deductBalance(userID int, amount float64) error {

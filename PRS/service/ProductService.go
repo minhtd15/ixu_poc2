@@ -1,6 +1,7 @@
 package service
 
 import (
+	_ "PRS/entity"
 	"database/sql"
 	"fmt"
 	"log"
@@ -61,12 +62,14 @@ func UpdateQuantityInStock(productID string, amountOrder int) error {
 	_, err = db.Exec("UPDATE SYSTEM.STOCK SET QuantityInStock = ? WHERE productID = ?", rs, productID)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("failed to deduct quantity in stock: %v", err)
+		log.Fatalf("Error running the SQL: %v", err)
+		return err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return fmt.Errorf("failed to update quantity in stock: %v", err)
+		log.Fatalf("Error update the quantity in stock: %v", err)
+		return err
 	}
 	return nil
 }

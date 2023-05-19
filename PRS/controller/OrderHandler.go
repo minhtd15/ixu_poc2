@@ -3,9 +3,8 @@ package controller
 import (
 	"PRS/client"
 	"PRS/entity"
-	"PRS/service"
+	_ "PRS/service"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -20,14 +19,16 @@ func OrderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// DB check whether the quantity in stock
-	inStock, err := service.GetQuantityInStock(order.ProductID)
+	inStock, err := order.GetQuantityInStock()
 	if err != nil {
-		fmt.Errorf("failed to get quantity in stock")
+		log.Fatalf("failed to get quantity in stock: %v", err)
 	}
 
-	priceEach, err := service.GetPriceEach(order.ProductID)
+	priceEach, err := order.GetPriceEach()
 	if err != nil {
-		fmt.Errorf("failed to get each of product's price")
+		log.Fatalf("failed to get correspond price of the product: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// check the quantity in stock
@@ -45,13 +46,27 @@ func OrderHandler(w http.ResponseWriter, r *http.Request) {
 		TotalOrder: float64(inStock) * priceEach,
 	}
 
-	err = service.UpdateQuantityInStock(order.ProductID, order.AmountOrder)
-
-	// Send message to RabbitMQ
-	orderBytes, err := json.Marshal(totalOrder)
+	// connect to client to connect to payment service to subtract the balance in the user's account
+	resp, err := client.OrderClient(totalOrder, w)
 	if err != nil {
+		log.Fatalf("Error connecting to payment service")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	defer resp.Body.Close()
+
+	// update the quantity in stock
+	if err := order.UpdateQuantityInStock(); err != nil {
+		log.Fatalf("Error update the quantity in stock")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	/*// Send message to RabbitMQ
+	orderBytes, err := json.Marshal(totalOrder)
+	if err != nil {
+		log.Fatalf()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	err = client.RabbitSender(orderBytes, w)
@@ -83,5 +98,5 @@ func OrderHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Exit the loop since we have received the response
 		break
-	}
+	} */
 }

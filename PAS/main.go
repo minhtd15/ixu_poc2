@@ -1,21 +1,19 @@
 package main
 
 import (
-	"PAS/client"
 	"PAS/controller"
-	"PAS/entity"
 	"database/sql"
-	"encoding/json"
+	"github.com/gorilla/mux"
 	_ "github.com/gorilla/mux"
 	"log"
+	"net/http"
 	_ "net/http"
 )
 
 var db *sql.DB
 
 func main() {
-
-	msgs := client.RabbitConsumer()
+	/* msgs := client.RabbitConsumer()
 
 	forever := make(chan bool)
 	go func() {
@@ -52,5 +50,10 @@ func main() {
 	}()
 
 	log.Printf("Waiting for messages")
-	<-forever
+	<-forever */
+	r := mux.NewRouter()
+	r.HandleFunc("/payment/deduct", controller.HandleDeduct)
+	log.Fatal(http.ListenAndServe(":8081", r))
+	log.Printf("Payment completed")
+
 }
