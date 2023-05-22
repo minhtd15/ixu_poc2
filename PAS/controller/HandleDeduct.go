@@ -2,7 +2,6 @@ package controller
 
 import (
 	"PAS/entity"
-	"PAS/service"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -30,7 +29,7 @@ func HandleDeduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Deduct
-	if err := deductBalance(req.UserID, req.TotalOrder); err != nil {
+	if err := deductBalance(req); err != nil {
 		log.Fatalf("Error deducting balance: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -41,26 +40,28 @@ func HandleDeduct(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Order successful"))
 }
 
-func deductBalance(userID int, amount float64) error {
+func deductBalance(req entity.DeductRequest) error {
 	// sử dụng lock để đảm bảo chỉ có một goroutine có thể thực hiện lệnh trừ tiền tại một thời điểm.
 	mu.Lock()
 	defer mu.Unlock()
 
 	fmt.Println("da tru")
-	balance, err := service.GetBalance(userID)
+	balance, err := req.GetBalance()
 
-	fmt.Printf("Khách hàng muốn mua hàng có giá trị %v và số dư tài khoản của khách hàng là %v \n", amount, balance)
+	fmt.Printf("Khách hàng muốn mua hàng có giá trị %v và số dư tài khoản của khách hàng là %v \n", req.TotalOrder, balance)
 	if err != nil {
+		log.Fatalf("Cannot find user who has ID: %v", req.UserID)
 		return UserNotFound
 	}
 
-	if balance < amount {
+	if balance < req.TotalOrder {
+		log.Fatalf("Do no have enough money for the purchase")
 		return InsufficientBalance
 	}
-	balance -= amount
+	balance -= req.TotalOrder
 	fmt.Println(balance)
 
-	balance, err = service.UpdateBalance(balance, userID)
+	balance, err = req.UpdateBalance(balance)
 	if err != nil {
 		return err
 	}

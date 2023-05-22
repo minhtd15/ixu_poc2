@@ -11,7 +11,7 @@ type OrderRequest struct {
 	AmountOrder int    `json:"amount"`
 }
 
-func (r OrderRequest) GetQuantityInStock() (int, error) {
+func (r *OrderRequest) GetQuantityInStock() (int, error) {
 	inStock, err := service.GetQuantityInStock(r.ProductID)
 	if err != nil {
 		log.Fatalf("Error getting quantity in stock")
@@ -19,7 +19,7 @@ func (r OrderRequest) GetQuantityInStock() (int, error) {
 	return inStock, nil
 }
 
-func (r OrderRequest) GetPriceEach() (float64, error) {
+func (r *OrderRequest) GetPriceEach() (float64, error) {
 	priceEach, err := service.GetPriceEach(r.ProductID)
 	if err != nil {
 		log.Fatalf("Error get each price")
@@ -27,7 +27,7 @@ func (r OrderRequest) GetPriceEach() (float64, error) {
 	return priceEach, err
 }
 
-func (r OrderRequest) UpdateQuantityInStock() error {
+func (r *OrderRequest) UpdateQuantityInStock() error {
 	err := service.UpdateQuantityInStock(r.ProductID, r.AmountOrder)
 	if err != nil {
 		log.Fatalf("Error update quantity in stock")
