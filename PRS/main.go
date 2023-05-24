@@ -9,6 +9,6 @@ import (
 
 func main() {
 	router := mux.NewRouter()
-	router.HandleFunc("/orders", controller.OrderHandler).Methods("POST")
+	router.HandleFunc("/orders", controller.OrderController).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

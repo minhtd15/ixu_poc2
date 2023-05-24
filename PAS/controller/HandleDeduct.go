@@ -36,8 +36,20 @@ func HandleDeduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// return result
+	response := entity.PaymentResponse{
+		Message: "Order successful",
+	}
+
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		log.Fatalf("Error converting response to json: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Order successful"))
+	w.Write(jsonResponse)
 }
 
 func deductBalance(req entity.DeductRequest) error {

@@ -3,7 +3,6 @@ package service
 import (
 	_ "PRS/entity"
 	"database/sql"
-	"fmt"
 	"log"
 )
 
@@ -56,7 +55,8 @@ func UpdateQuantityInStock(productID string, amountOrder int) error {
 
 	inStock, err := GetQuantityInStock(productID)
 	if err != nil {
-		fmt.Errorf("failed to get quantity in stock to update the new quantity")
+		log.Fatalf("Cannot get the quantity in stock")
+		return err
 	}
 	rs := inStock - amountOrder
 	_, err = db.Exec("UPDATE SYSTEM.STOCK SET QuantityInStock = ? WHERE productID = ?", rs, productID)

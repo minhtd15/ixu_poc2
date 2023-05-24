@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func OrderHandler(w http.ResponseWriter, r *http.Request) {
+func OrderController(w http.ResponseWriter, r *http.Request) {
 	order := entity.OrderRequest{}
 
 	err := json.NewDecoder(r.Body).Decode(&order)
@@ -34,8 +34,8 @@ func OrderHandler(w http.ResponseWriter, r *http.Request) {
 	// check the quantity in stock
 	if order.AmountOrder > inStock {
 		result := "The products in stock are not enough"
-		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(result)
 		return
 	}
