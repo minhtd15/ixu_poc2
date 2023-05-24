@@ -6,20 +6,20 @@ import (
 	"log"
 )
 
-var db *sql.DB = ConnectToDB()
+//var db *sql.DB = ConnectToDB()
+//
+//func ConnectToDB() *sql.DB {
+//	db, err := sql.Open("godror", "system/oracle@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=orclpdb1)))")
+//	if err != nil {
+//		log.Fatalf("Error connecting to DB: %v", err)
+//		return nil
+//	}
+//	defer db.Close()
+//
+//	return db
+//}
 
-func ConnectToDB() *sql.DB {
-	db, err := sql.Open("godror", "system/oracle@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=orclpdb1)))")
-	if err != nil {
-		log.Fatalf("Error connecting to DB: %v", err)
-		return nil
-	}
-	defer db.Close()
-
-	return db
-}
-
-func GetPriceEach(productID string) (float64, error) {
+func GetPriceEach(productID string, db *sql.DB) (float64, error) {
 	log.Printf("Start to get price of the product: %v", productID)
 
 	// logical solving
@@ -35,7 +35,7 @@ func GetPriceEach(productID string) (float64, error) {
 	return priceEach, err
 }
 
-func GetQuantityInStock(productID string) (int, error) {
+func GetQuantityInStock(productID string, db *sql.DB) (int, error) {
 	log.Printf("Start to get quantity in stock of product: %v", productID)
 	// logical solving
 	var inStock int
@@ -50,10 +50,10 @@ func GetQuantityInStock(productID string) (int, error) {
 	return inStock, err
 }
 
-func UpdateQuantityInStock(productID string, amountOrder int) error {
+func UpdateQuantityInStock(productID string, amountOrder int, db *sql.DB) error {
 	tx, err := db.Begin()
 
-	inStock, err := GetQuantityInStock(productID)
+	inStock, err := GetQuantityInStock(productID, db)
 	if err != nil {
 		log.Fatalf("Cannot get the quantity in stock")
 		return err
