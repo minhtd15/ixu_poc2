@@ -10,9 +10,24 @@ import (
 	"net/http"
 )
 
-func OrderController(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	order := entity.OrderRequest{}
+type orderControllerDB struct {
+	db *sql.DB
+}
 
+func NewOrderController(db *sql.DB) *orderControllerDB {
+	return &orderControllerDB{
+		db: db,
+	}
+}
+
+type orderRequestTmp struct {
+	UserID      int
+	ProductID   string
+	AmountOrder int
+}
+
+func (c *orderControllerDB) OrderController(w http.ResponseWriter, r *http.Request) {
+	order := orderRequestTmp{}
 	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -22,12 +37,12 @@ func OrderController(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	orderTmp := entity.NewOrderRequest(order.UserID, order.ProductID, order.AmountOrder)
 
 	// DB check whether the quantity in stock
-	inStock, err := orderTmp.GetQuantityInStock(db)
+	inStock, err := orderTmp.GetQuantityInStock(c.db)
 	if err != nil {
 		log.Fatalf("failed to get quantity in stock: %v", err)
 	}
 
-	priceEach, err := orderTmp.GetPriceEach(db)
+	priceEach, err := orderTmp.GetPriceEach(c.db)
 	if err != nil {
 		log.Fatalf("failed to get correspond price of the product: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -59,7 +74,7 @@ func OrderController(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	defer resp.Body.Close()
 
 	// update the quantity in stock
-	if err := orderTmp.UpdateQuantityInStock(db); err != nil {
+	if err := orderTmp.UpdateQuantityInStock(c.db); err != nil {
 		log.Fatalf("Error update the quantity in stock")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

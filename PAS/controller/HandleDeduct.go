@@ -11,25 +11,24 @@ import (
 
 var mu sync.Mutex
 
-//func HandleDeduct(userID int, amount float64) error {
-//	// Deduct
-//	if err := deductBalance(userID, amount); err != nil {
-//		return fmt.Errorf("Failed to deduct and update balance: %v", err)
-//	}
-//	// return result
-//	log.Printf("Deducted %v from account %v", amount, userID)
-//	return nil
-//}
+type deductRequestTmp struct {
+	UserID     int
+	TotalOrder float64
+}
+
+var reqTmp = deductRequestTmp{}
+var req = entity.NewDeductRequest(reqTmp.UserID, reqTmp.TotalOrder)
 
 func HandleDeduct(w http.ResponseWriter, r *http.Request) {
-	var req entity.DeductRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+
+	if err := json.NewDecoder(r.Body).Decode(&reqTmp); err != nil {
 		log.Fatalf("Error converting json to object: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	// Deduct
-	if err := deductBalance(req); err != nil {
+	if err := deductBalance(); err != nil {
 		log.Fatalf("Error deducting balance: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -52,7 +51,7 @@ func HandleDeduct(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 }
 
-func deductBalance(req entity.DeductRequest) error {
+func deductBalance() error {
 	// sử dụng lock để đảm bảo chỉ có một goroutine có thể thực hiện lệnh trừ tiền tại một thời điểm.
 	mu.Lock()
 	defer mu.Unlock()
