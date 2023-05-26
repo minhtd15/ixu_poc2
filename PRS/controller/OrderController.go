@@ -18,6 +18,7 @@ type orderRequestTmp struct {
 
 type orderController struct {
 	ProductService *service.ProductService
+	OrderClient    *client.OrderClient
 }
 
 func NewOrderController(productService *service.ProductService) *orderController {
@@ -65,7 +66,7 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 	}
 
 	// connect to client to connect to payment service to subtract the balance in the user's account
-	resp, err := client.OrderClient(totalOrder, w)
+	resp, err := oc.OrderClient.DoOrder(totalOrder, w)
 	if err != nil {
 		log.Fatalf("Error connecting to payment service")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
