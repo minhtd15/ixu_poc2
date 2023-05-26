@@ -19,7 +19,8 @@ func NewOrderClient(baseURL string) *OrderClient {
 
 func (oc *OrderClient) DoOrder(request entity.BillRequest, w http.ResponseWriter) (*http.Response, error) {
 	requestBody, _ := json.Marshal(request)
-	resp, err := http.Post(oc.BaseURL+"/payment/deduct", "application/json", bytes.NewBuffer(requestBody))
+	URL := NewOrderClient(oc.BaseURL)
+	resp, err := http.Post(URL.BaseURL+"/payment/deduct", "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return nil, err
