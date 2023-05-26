@@ -6,12 +6,22 @@ import (
 	"log"
 )
 
-func GetPriceEach(productID string, db *sql.DB) (float64, error) {
+type ProductService struct {
+	db *sql.DB
+}
+
+func NewProductService(db *sql.DB) *ProductService {
+	return &ProductService{
+		db: db,
+	}
+}
+
+func (c *ProductService) GetPriceEach(productID string) (float64, error) {
 	log.Printf("Start to get price of the product: %v", productID)
 
 	// logical solving
 	var priceEach float64
-	err := db.QueryRow("SELECT priceEach from SYSTEM.STOCK where productID = ?", productID).Scan(&priceEach)
+	err := c.db.QueryRow("SELECT priceEach from SYSTEM.STOCK where productID = ?", productID).Scan(&priceEach)
 
 	if err != nil {
 		log.Fatalf("Failed to check the price of each product %v", err)
@@ -22,11 +32,11 @@ func GetPriceEach(productID string, db *sql.DB) (float64, error) {
 	return priceEach, err
 }
 
-func GetQuantityInStock(productID string, db *sql.DB) (int, error) {
+func (c *ProductService) GetQuantityInStock(productID string) (int, error) {
 	log.Printf("Start to get quantity in stock of product: %v", productID)
 	// logical solving
 	var inStock int
-	err := db.QueryRow("SELECT QuantityInStock from SYSTEM.STOCK where productID = ?", productID).Scan(&inStock)
+	err := c.db.QueryRow("SELECT QuantityInStock from SYSTEM.STOCK where productID = ?", productID).Scan(&inStock)
 
 	if err != nil {
 		log.Fatalf("failed to check the quantity in stock: %v", err)
@@ -37,16 +47,16 @@ func GetQuantityInStock(productID string, db *sql.DB) (int, error) {
 	return inStock, err
 }
 
-func UpdateQuantityInStock(productID string, amountOrder int, db *sql.DB) error {
-	tx, err := db.Begin()
+func (c *ProductService) UpdateQuantityInStock(productID string, amountOrder int) error {
+	tx, err := c.db.Begin()
 
-	inStock, err := GetQuantityInStock(productID, db)
+	inStock, err := c.GetQuantityInStock(productID)
 	if err != nil {
 		log.Fatalf("Cannot get the quantity in stock")
 		return err
 	}
 	rs := inStock - amountOrder
-	_, err = db.Exec("UPDATE SYSTEM.STOCK SET QuantityInStock = ? WHERE productID = ?", rs, productID)
+	_, err = c.db.Exec("UPDATE SYSTEM.STOCK SET QuantityInStock = ? WHERE productID = ?", rs, productID)
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("Error running the SQL: %v", err)

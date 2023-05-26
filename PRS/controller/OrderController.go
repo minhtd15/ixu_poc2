@@ -3,22 +3,12 @@ package controller
 import (
 	"PRS/client"
 	"PRS/entity"
+	"PRS/service"
 	_ "PRS/service"
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 )
-
-type orderControllerDB struct {
-	db *sql.DB
-}
-
-func NewOrderController(db *sql.DB) *orderControllerDB {
-	return &orderControllerDB{
-		db: db,
-	}
-}
 
 type orderRequestTmp struct {
 	UserID      int
@@ -26,7 +16,17 @@ type orderRequestTmp struct {
 	AmountOrder int
 }
 
-func (c *orderControllerDB) OrderController(w http.ResponseWriter, r *http.Request) {
+type orderController struct {
+	ProductService *service.ProductService
+}
+
+func NewOrderController(productService *service.ProductService) *orderController {
+	return &orderController{
+		ProductService: productService,
+	}
+}
+
+func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Request) {
 	order := orderRequestTmp{}
 	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
@@ -37,12 +37,12 @@ func (c *orderControllerDB) OrderController(w http.ResponseWriter, r *http.Reque
 	orderTmp := entity.NewOrderRequest(order.UserID, order.ProductID, order.AmountOrder)
 
 	// DB check whether the quantity in stock
-	inStock, err := orderTmp.GetQuantityInStock(c.db)
+	inStock, err := oc.ProductService.GetQuantityInStock(orderTmp.ProductID)
 	if err != nil {
 		log.Fatalf("failed to get quantity in stock: %v", err)
 	}
 
-	priceEach, err := orderTmp.GetPriceEach(c.db)
+	priceEach, err := oc.ProductService.GetPriceEach(orderTmp.ProductID)
 	if err != nil {
 		log.Fatalf("failed to get correspond price of the product: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -74,7 +74,7 @@ func (c *orderControllerDB) OrderController(w http.ResponseWriter, r *http.Reque
 	defer resp.Body.Close()
 
 	// update the quantity in stock
-	if err := orderTmp.UpdateQuantityInStock(c.db); err != nil {
+	if err := oc.ProductService.UpdateQuantityInStock(orderTmp.ProductID, orderTmp.AmountOrder); err != nil {
 		log.Fatalf("Error update the quantity in stock")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

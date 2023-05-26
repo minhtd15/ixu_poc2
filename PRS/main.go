@@ -3,6 +3,7 @@ package main
 import (
 	_ "PRS/client"
 	"PRS/controller"
+	"PRS/service"
 	"database/sql"
 	"github.com/gorilla/mux"
 	"log"
@@ -15,11 +16,14 @@ func main() {
 		log.Fatalf("Error connecting to DB: %v", err)
 	}
 
-	router := mux.NewRouter()
-	router.HandleFunc("/order", func(w http.ResponseWriter, r *http.Request) {
-		controllerDB := controller.NewOrderController(db)
-		controllerDB.OrderController(w, r)
-	}).Methods("POST")
+	productService := service.NewProductService(db)
 
+	// Tạo một instance của controller và inject ProductService vào
+	orderController := controller.NewOrderController(productService)
+
+	router := mux.NewRouter()
+	router.HandleFunc("/order", orderController.OrderController).Methods("POST")
+
+	// router.HandleFunc("/movies/", CreateMovie).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
