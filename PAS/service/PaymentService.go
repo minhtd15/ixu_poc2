@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	_ "log"
+	"sync"
 )
 
 type PaymentService struct {
-	db *sql.DB
+	db   *sql.DB
+	lock sync.Mutex
 }
 
 func NewPaymentService(db *sql.DB) *PaymentService {
@@ -32,6 +34,9 @@ func (c *PaymentService) GetBalance(userID int) (float64, error) {
 }
 
 func (c *PaymentService) UpdateBalance(balance float64, userID int) (float64, error) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	tx, err := c.db.Begin()
 	_, err = c.db.Exec("UPDATE SYSTEM.PAYMENTDB SET BALANCE = ? WHERE USERID = ?", balance, userID)
 	if err != nil {

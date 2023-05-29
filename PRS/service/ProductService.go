@@ -4,10 +4,12 @@ import (
 	_ "PRS/entity"
 	"database/sql"
 	"log"
+	"sync"
 )
 
 type ProductService struct {
-	db *sql.DB
+	db   *sql.DB
+	lock sync.Mutex
 }
 
 func NewProductService(db *sql.DB) *ProductService {
@@ -48,6 +50,9 @@ func (c *ProductService) GetQuantityInStock(productID string) (int, error) {
 }
 
 func (c *ProductService) UpdateQuantityInStock(productID string, amount int) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	tx, err := c.db.Begin()
 
 	if err != nil {
