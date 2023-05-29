@@ -13,7 +13,7 @@ type OrderClient struct {
 
 func NewOrderClient(baseURL string) *OrderClient {
 	return &OrderClient{
-		BaseURL: "http://localhost:8081",
+		BaseURL: baseURL,
 	}
 }
 
@@ -25,5 +25,6 @@ func (oc *OrderClient) DoOrder(request entity.BillRequest, w http.ResponseWriter
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return nil, err
 	}
+	defer resp.Body.Close()
 	return resp, err
 }

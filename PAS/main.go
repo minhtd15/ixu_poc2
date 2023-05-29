@@ -2,6 +2,7 @@ package main
 
 import (
 	"PAS/controller"
+	"PAS/service"
 	"database/sql"
 	"github.com/gorilla/mux"
 	_ "github.com/gorilla/mux"
@@ -51,8 +52,17 @@ func main() {
 
 	log.Printf("Waiting for messages")
 	<-forever */
+	db, err := sql.Open("godror", "system/oracle@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=orclpdb1)))")
+	if err != nil {
+		log.Fatalf("Error connecting to DB: %v", err)
+	}
+
+	paymentService := service.NewPaymentService(db)
+
+	paymentController := controller.NewPaymentController(paymentService, db)
+
 	r := mux.NewRouter()
-	r.HandleFunc("/payment/deduct", controller.HandleDeduct)
+	r.HandleFunc("/payment/deduct", paymentController.PaymentController).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8081", r))
 	log.Printf("Payment completed")
 

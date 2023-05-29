@@ -1,6 +1,7 @@
 package main
 
 import (
+	"PRS/client"
 	_ "PRS/client"
 	"PRS/controller"
 	"PRS/service"
@@ -17,13 +18,13 @@ func main() {
 	}
 
 	productService := service.NewProductService(db)
+	orderClient := client.NewOrderClient("http://localhost:8081")
 
 	// Tạo một instance của controller và inject ProductService vào
-	orderController := controller.NewOrderController(productService)
+	orderController := controller.NewOrderController(productService, orderClient, db)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/order", orderController.OrderController).Methods("POST")
 
-	// router.HandleFunc("/movies/", CreateMovie).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

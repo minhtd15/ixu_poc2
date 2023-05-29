@@ -47,16 +47,15 @@ func (c *ProductService) GetQuantityInStock(productID string) (int, error) {
 	return inStock, err
 }
 
-func (c *ProductService) UpdateQuantityInStock(productID string, amountOrder int) error {
+func (c *ProductService) UpdateQuantityInStock(productID string, amount int) error {
 	tx, err := c.db.Begin()
 
-	inStock, err := c.GetQuantityInStock(productID)
 	if err != nil {
 		log.Fatalf("Cannot get the quantity in stock")
 		return err
 	}
-	rs := inStock - amountOrder
-	_, err = c.db.Exec("UPDATE SYSTEM.STOCK SET QuantityInStock = ? WHERE productID = ?", rs, productID)
+
+	_, err = c.db.Exec("UPDATE SYSTEM.STOCK SET QuantityInStock = ? WHERE productID = ?", amount, productID)
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("Error running the SQL: %v", err)

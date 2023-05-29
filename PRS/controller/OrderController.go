@@ -5,6 +5,7 @@ import (
 	"PRS/entity"
 	"PRS/service"
 	_ "PRS/service"
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -19,17 +20,22 @@ type orderRequestTmp struct {
 type orderController struct {
 	ProductService *service.ProductService
 	OrderClient    *client.OrderClient
+	DB             *sql.DB
 }
 
-func NewOrderController(productService *service.ProductService) *orderController {
+func NewOrderController(productService *service.ProductService, orderClient *client.OrderClient, db *sql.DB) *orderController {
 	return &orderController{
 		ProductService: productService,
+		OrderClient:    orderClient,
+		DB:             db,
 	}
 }
 
 func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Request) {
+	tx, err := oc.DB.Begin()
 	order := orderRequestTmp{}
-	err := json.NewDecoder(r.Body).Decode(&order)
+
+	err = json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -65,22 +71,39 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 		TotalOrder: float64(inStock) * priceEach,
 	}
 
-	// connect to client to connect to payment service to subtract the balance in the user's account
-	resp, err := oc.OrderClient.DoOrder(totalOrder, w)
-	if err != nil {
-		log.Fatalf("Error connecting to payment service")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-
 	// update the quantity in stock
-	if err := oc.ProductService.UpdateQuantityInStock(orderTmp.ProductID, orderTmp.AmountOrder); err != nil {
+	if err := oc.ProductService.UpdateQuantityInStock(orderTmp.ProductID, inStock-orderTmp.AmountOrder); err != nil {
 		log.Fatalf("Error update the quantity in stock")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	// connect to client to connect to payment service to subtract the balance in the user's account
+	resp, err := oc.OrderClient.DoOrder(totalOrder, w)
+	if err != nil {
+		log.Fatalf("Error connecting to payment service")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	if resp.StatusCode == http.StatusPaymentRequired {
+		// Rollback transaction
+		tx.Rollback()
+
+		// Not enough balance
+		errorMessage := "Insufficient balance"
+		http.Error(w, errorMessage, http.StatusPaymentRequired)
+
+		return
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		log.Fatalf("Failed to commit transaction: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	/*// Send message to RabbitMQ
 	orderBytes, err := json.Marshal(totalOrder)
 	if err != nil {
