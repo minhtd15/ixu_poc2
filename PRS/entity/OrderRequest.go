@@ -1,7 +1,6 @@
 package entity
 
 import (
-	_ "PRS/service"
 	_ "database/sql"
 	_ "log"
 )

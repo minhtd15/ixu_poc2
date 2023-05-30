@@ -1,7 +1,6 @@
 package service
 
 import (
-	_ "PRS/entity"
 	"database/sql"
 	"log"
 	"sync"

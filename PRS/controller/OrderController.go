@@ -4,7 +4,6 @@ import (
 	"PRS/client"
 	"PRS/entity"
 	"PRS/service"
-	_ "PRS/service"
 	"database/sql"
 	"encoding/json"
 	"log"

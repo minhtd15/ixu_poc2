@@ -4,11 +4,10 @@ import (
 	"PAS/controller"
 	"PAS/service"
 	"database/sql"
+	_ "github.com/godror/godror"
 	"github.com/gorilla/mux"
-	_ "github.com/gorilla/mux"
 	"log"
 	"net/http"
-	_ "net/http"
 )
 
 var db *sql.DB

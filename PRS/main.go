@@ -2,11 +2,13 @@ package main
 
 import (
 	"PRS/client"
-	_ "PRS/client"
 	"PRS/controller"
 	"PRS/service"
 	"database/sql"
+	"fmt"
+	_ "github.com/godror/godror"
 	"github.com/gorilla/mux"
+	"github.com/streadway/amqp"
 	"log"
 	"net/http"
 )
@@ -16,6 +18,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error connecting to DB: %v", err)
 	}
+
+	fmt.Println("RabbitMQ Connector")
+	// Connect to RabbitMQ server
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbitMQ server: %v", err)
+		fmt.Println(err)
+		panic(err)
+	}
+	defer conn.Close()
+
+	fmt.Println("Successfully connected to RabbitMQ Instance")
 
 	productService := service.NewProductService(db)
 	orderClient := client.NewOrderClient("http://localhost:8081")
