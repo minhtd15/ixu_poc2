@@ -45,13 +45,6 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 		log.Fatalf("failed to get quantity in stock: %v", err)
 	}
 
-	priceEach, err := oc.ProductService.GetPriceEach(orderTmp.ProductID)
-	if err != nil {
-		log.Fatalf("failed to get correspond price of the product: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	// check the quantity in stock
 	if orderTmp.AmountOrder > inStock {
 		result := "The products in stock are not enough"
@@ -61,17 +54,17 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	priceEach, err := oc.ProductService.GetPriceEach(orderTmp.ProductID)
+	if err != nil {
+		log.Fatalf("failed to get correspond price of the product: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	// if there is enough quantity in stock, multiply the total amount of money that the customer want to buy
 	var totalOrder = entity.BillRequest{
 		UserID:     order.UserID,
 		TotalOrder: float64(inStock) * priceEach,
-	}
-
-	// update the quantity in stock
-	if err := oc.ProductService.UpdateQuantityInStock(orderTmp.ProductID, inStock-orderTmp.AmountOrder); err != nil {
-		log.Fatalf("Error update the quantity in stock")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
 	}
 
 	// connect to client to connect to payment service to subtract the balance in the user's account
@@ -79,7 +72,13 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		log.Fatalf("Error connecting to payment service")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	// update the quantity in stock
+	if err := oc.ProductService.UpdateQuantityInStock(orderTmp.ProductID, inStock-orderTmp.AmountOrder); err != nil {
+		log.Fatalf("Error update the quantity in stock")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

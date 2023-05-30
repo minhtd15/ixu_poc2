@@ -49,17 +49,21 @@ func (c *ProductService) GetQuantityInStock(productID string) (int, error) {
 }
 
 func (c *ProductService) UpdateQuantityInStock(productID string, amount int) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	tx, err := c.db.Begin()
-
 	if err != nil {
-		log.Fatalf("Cannot get the quantity in stock")
+		log.Fatalf("Cannot start a transaction: %v", err)
 		return err
 	}
 
-	_, err = c.db.Exec("UPDATE SYSTEM.STOCK SET QuantityInStock = ? WHERE productID = ?", amount, productID)
+	// Lock the row for update
+	_, err = tx.Exec("SELECT * FROM SYSTEM.STOCK WHERE productID = ? FOR UPDATE", productID)
+	if err != nil {
+		tx.Rollback()
+		log.Fatalf("Error locking the row: %v", err)
+		return err
+	}
+
+	_, err = tx.Exec("UPDATE SYSTEM.STOCK SET QuantityInStock = ? WHERE productID = ?", amount, productID)
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("Error running the SQL: %v", err)
@@ -68,8 +72,9 @@ func (c *ProductService) UpdateQuantityInStock(productID string, amount int) err
 
 	err = tx.Commit()
 	if err != nil {
-		log.Fatalf("Error update the quantity in stock: %v", err)
+		log.Fatalf("Error committing the transaction: %v", err)
 		return err
 	}
+
 	return nil
 }
