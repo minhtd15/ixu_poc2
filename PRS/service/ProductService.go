@@ -36,15 +36,17 @@ func (c *ProductService) GetPriceEach(productID string) (float64, error) {
 func (c *ProductService) GetQuantityInStock(productID string) (int, error) {
 	log.Printf("Start to get quantity in stock of product: %v", productID)
 	// logical solving
+
+	// lock row by using select for update
 	var inStock int
-	err := c.db.QueryRow("SELECT QuantityInStock from SYSTEM.STOCK where productID = ?", productID).Scan(&inStock)
+	err := c.db.QueryRow("SELECT QuantityInStock from SYSTEM.STOCK where productID = ? FOR UPDATE", productID).Scan(&inStock)
 
 	if err != nil {
 		log.Fatalf("failed to check the quantity in stock: %v", err)
 		return 0, err
 	}
 
-	log.Printf("Get quantity success \nproduct: %v \n quantity", productID, inStock)
+	log.Printf("get quantity success \nproduct: %v \n quantity", productID, inStock)
 	return inStock, err
 }
 
@@ -52,20 +54,6 @@ func (c *ProductService) UpdateQuantityInStock(productID string, amount int) err
 	tx, err := c.db.Begin()
 	if err != nil {
 		log.Fatalf("Cannot start a transaction: %v", err)
-		return err
-	}
-
-	// Lock row
-	_, err = tx.Exec("SELECT * FROM SYSTEM.STOCK WHERE productID = ? FOR UPDATE NOWAIT", productID)
-	if err != nil {
-		tx.Rollback()
-		// check error whether the row is locked by another transaction
-		if err == sql.ErrNoRows {
-			log.Println("The row is already locked by another transaction")
-			return err
-		}
-
-		log.Fatalf("Cannot lock the row: %v", err)
 		return err
 	}
 
