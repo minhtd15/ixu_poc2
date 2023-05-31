@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"sync"
 )
@@ -9,6 +10,10 @@ import (
 type ProductService struct {
 	db   *sql.DB
 	lock sync.Mutex
+}
+type UpdateResult struct {
+	QuantityInStock int
+	Err             error
 }
 
 func NewProductService(db *sql.DB) *ProductService {
@@ -33,42 +38,43 @@ func (c *ProductService) GetPriceEach(productID string) (float64, error) {
 	return priceEach, err
 }
 
-func (c *ProductService) GetQuantityInStock(productID string) (int, error) {
-	log.Printf("Start to get quantity in stock of product: %v", productID)
-	// logical solving
-
-	// lock row by using select for update
-	var inStock int
-	err := c.db.QueryRow("SELECT QuantityInStock from SYSTEM.STOCK where productID = ? FOR UPDATE", productID).Scan(&inStock)
-
-	if err != nil {
-		log.Fatalf("failed to check the quantity in stock: %v", err)
-		return 0, err
-	}
-
-	log.Printf("get quantity success \nproduct: %v \n quantity", productID, inStock)
-	return inStock, err
-}
-
-func (c *ProductService) UpdateQuantityInStock(productID string, amount int) error {
+func (c *ProductService) UpdateQuantityInStock(productID string, amountOrder int) (*UpdateResult, error) {
 	tx, err := c.db.Begin()
 	if err != nil {
 		log.Fatalf("Cannot start a transaction: %v", err)
-		return err
+		return nil, err
 	}
 
-	_, err = tx.Exec("UPDATE SYSTEM.STOCK SET QuantityInStock = ? WHERE productID = ?", amount, productID)
+	// Lock row
+	_, err = tx.Exec("SELECT * FROM SYSTEM.STOCK WHERE productID = ? FOR UPDATE", productID)
+	if err != nil {
+		tx.Rollback()
+		log.Fatalf("Cannot lock the row: %v", err)
+		return nil, err
+	}
+
+	// get the quantity in stock
+	var inStock int
+	err = c.db.QueryRow("SELECT QuantityInStock from SYSTEM.STOCK where productID = ? FOR UPDATE", productID).Scan(&inStock)
+
+	if amountOrder > inStock {
+		log.Fatalf("The products in stock are not enough")
+		return nil, fmt.Errorf("The products in stock are not enough")
+	}
+
+	_, err = tx.Exec("UPDATE SYSTEM.STOCK SET QuantityInStock = ? WHERE productID = ?", inStock-amountOrder, productID)
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("Error running the SQL: %v", err)
-		return err
+		return nil, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("Error committing the transaction: %v", err)
-		return err
+		return nil, err
 	}
-	return nil
+
+	return &UpdateResult{QuantityInStock: inStock - amountOrder, Err: nil}, nil
 }
