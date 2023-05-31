@@ -55,11 +55,17 @@ func (c *ProductService) UpdateQuantityInStock(productID string, amount int) err
 		return err
 	}
 
-	// Lock the row for update
-	_, err = tx.Exec("SELECT * FROM SYSTEM.STOCK WHERE productID = ? FOR UPDATE", productID)
+	// Lock row
+	_, err = tx.Exec("SELECT * FROM SYSTEM.STOCK WHERE productID = ? FOR UPDATE NOWAIT", productID)
 	if err != nil {
 		tx.Rollback()
-		log.Fatalf("Error locking the row: %v", err)
+		// check error whether the row is locked by another transaction
+		if err == sql.ErrNoRows {
+			log.Println("The row is already locked by another transaction")
+			return err
+		}
+
+		log.Fatalf("Cannot lock the row: %v", err)
 		return err
 	}
 
@@ -72,9 +78,9 @@ func (c *ProductService) UpdateQuantityInStock(productID string, amount int) err
 
 	err = tx.Commit()
 	if err != nil {
+		tx.Rollback()
 		log.Fatalf("Error committing the transaction: %v", err)
 		return err
 	}
-
 	return nil
 }
