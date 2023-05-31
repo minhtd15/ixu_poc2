@@ -35,7 +35,7 @@ func main() {
 	orderClient := client.NewOrderClient("http://localhost:8081")
 
 	// Tạo một instance của controller và inject ProductService vào
-	orderController := controller.NewOrderController(productService, orderClient, db)
+	orderController := controller.NewOrderController(productService, orderClient)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/order", orderController.OrderController).Methods("POST")

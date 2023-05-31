@@ -4,7 +4,6 @@ import (
 	"PRS/client"
 	"PRS/entity"
 	"PRS/service"
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -21,7 +20,7 @@ type orderController struct {
 	OrderClient    *client.OrderClient
 }
 
-func NewOrderController(productService *service.ProductService, orderClient *client.OrderClient, db *sql.DB) *orderController {
+func NewOrderController(productService *service.ProductService, orderClient *client.OrderClient) *orderController {
 	return &orderController{
 		ProductService: productService,
 		OrderClient:    orderClient,
