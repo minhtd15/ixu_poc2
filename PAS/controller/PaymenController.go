@@ -42,7 +42,7 @@ func (pc *paymentController) PaymentController(w http.ResponseWriter, r *http.Re
 	// Deduct
 	if err := deductBalance(pc, order); err != nil {
 		log.Fatalf("Error deducting balance: %v", err)
-		http.Error(w, "Insufficient balance", http.StatusPaymentRequired)
+		http.Error(w, "Insufficient balance", http.StatusBadRequest)
 		return
 	}
 

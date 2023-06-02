@@ -6,16 +6,16 @@ import (
 )
 
 type orderRequest struct {
-	UserID      int    `json:"userID"`
-	ProductID   string `json:"productID"`
-	AmountOrder int    `json:"amount"`
+	UserID     int    `json:"userID"`
+	ProductID  string `json:"productID"`
+	TotalOrder int    `json:"amount"`
 }
 
 func NewOrderRequest(UserID int, ProductID string, AmountOrder int) *orderRequest {
 	return &orderRequest{
-		UserID:      UserID,
-		ProductID:   ProductID,
-		AmountOrder: AmountOrder,
+		UserID:     UserID,
+		ProductID:  ProductID,
+		TotalOrder: AmountOrder,
 	}
 }
 
