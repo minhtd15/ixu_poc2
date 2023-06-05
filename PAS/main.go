@@ -57,11 +57,11 @@ func main() {
 	}
 
 	paymentService := service.NewPaymentService(db)
-
 	paymentController := controller.NewPaymentController(paymentService, db)
 
 	r := mux.NewRouter()
-	r.HandleFunc("/payment/deduct", paymentController.PaymentController).Methods("GET")
+	r.HandleFunc("/payment/deduct-balance", paymentController.PaymentController).Methods("PUT")
+	r.HandleFunc("/payment/check-balance", paymentController.BalanceController).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8081", r))
 	log.Printf("Payment completed")
 

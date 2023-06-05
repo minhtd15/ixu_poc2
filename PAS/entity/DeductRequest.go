@@ -1,6 +1,6 @@
 package entity
 
 type DeductRequest struct {
-	UserID     int     `json:"userID"`
-	TotalOrder float64 `json:"totalOrder"`
+	UserID          int     `json:"userID"`
+	TotalMoneyOrder float64 `json:"totalOrder"`
 }

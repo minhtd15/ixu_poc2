@@ -36,30 +36,48 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// check the balance of the customer's account and return the value of total money ordered by the customer
-	tmp, err := oc.ProductService.CheckCustomerBalance(order.UserID, order.ProductID, order.TotalAmountOrder)
+	// calculate the total money that customer purchase by calculate priceEach * numberOrder
+	tmp, err := oc.ProductService.CheckTotalPurchase(order.ProductID, order.TotalAmountOrder)
 	if err != nil {
-		http.Error(w, "Cannot check the balance of the customer to check if it's enough", http.StatusBadRequest)
+		http.Error(w, "error calculating the total money that the customer want to purchase", http.StatusBadRequest)
 		return
 	}
 
-	// update so luong hang cua khach hang
+	// get the total value of money that customer ordered to send to payment service
+	totalMoneyOrder := entity.BillRequest{order.UserID, tmp.TotalMoneyOrdered}
+
+	// call the service payment to check the balance of the customer's account
+	hasEnoughBalance, err := oc.OrderClient.CheckBalance(totalMoneyOrder, w)
+	if err != nil {
+		log.Fatalf("Error checking balance in payment service")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if !hasEnoughBalance {
+		// Not enough money
+		response := entity.CheckBalanceResponse{
+			Status: "Not enough balance",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// update the quantity in stock
 	err = oc.ProductService.UpdateQuantityInStock(order.ProductID, order.TotalAmountOrder)
 	if err != nil {
 		err = oc.ProductService.UpdateQuantityInStock(order.ProductID, -order.TotalAmountOrder)
 		http.Error(w, "Cannot deduct the amount of products in stock", http.StatusBadRequest)
-	}
-
-	totalMoneyOrder := entity.BillRequest{
-		order.UserID,
-		tmp.TotalMoneyOrdered,
+		return
 	}
 
 	// connect to client to connect to payment service to subtract the balance in the user's account
-	resp, err := oc.OrderClient.DoOrder(totalMoneyOrder, w)
+	resp, err := oc.OrderClient.DoDeduct(totalMoneyOrder, w)
 	if err != nil {
 		log.Fatalf("Error connecting to payment service")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		// if the connection to client failed, the quantity in stock would be rehabilitated as the previous amount
 		err = oc.ProductService.UpdateQuantityInStock(order.ProductID, -order.TotalAmountOrder)
 		return

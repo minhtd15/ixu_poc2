@@ -1,5 +1,5 @@
 package entity
 
-type PaymentResponse struct {
+type CheckBalanceResponse struct {
 	Status string `json:"status"`
 }
