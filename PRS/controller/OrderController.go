@@ -37,14 +37,14 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 	}
 
 	// calculate the total money that customer purchase by calculate priceEach * numberOrder
-	tmp, err := oc.ProductService.CheckTotalPurchase(order.ProductID, order.TotalAmountOrder)
+	TotalMoneyOrdered, err := oc.ProductService.CheckTotalPurchase(order.ProductID, order.TotalAmountOrder)
 	if err != nil {
 		http.Error(w, "error calculating the total money that the customer want to purchase", http.StatusBadRequest)
 		return
 	}
 
 	// get the total value of money that customer ordered to send to payment service
-	totalMoneyOrder := entity.BillRequest{order.UserID, tmp.TotalMoneyOrdered}
+	totalMoneyOrder := entity.BillRequest{order.UserID, TotalMoneyOrdered}
 
 	// call the service payment to check the balance of the customer's account
 	hasEnoughBalance, err := oc.OrderClient.CheckBalance(totalMoneyOrder, w)
@@ -66,12 +66,22 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 	}
 
 	// update the quantity in stock
-	err = oc.ProductService.UpdateQuantityInStock(order.ProductID, order.TotalAmountOrder)
-	if err != nil {
+	func() {
+		err = oc.ProductService.UpdateQuantityInStock(order.ProductID, order.TotalAmountOrder)
+		if err != nil {
+			err = oc.ProductService.UpdateQuantityInStock(order.ProductID, -order.TotalAmountOrder)
+			http.Error(w, "Cannot deduct the amount of products in stock", http.StatusBadRequest)
+			return
+		}
+	}()
+
+	defer func() {
 		err = oc.ProductService.UpdateQuantityInStock(order.ProductID, -order.TotalAmountOrder)
-		http.Error(w, "Cannot deduct the amount of products in stock", http.StatusBadRequest)
-		return
-	}
+		if err != nil {
+			log.Fatalf("Error updating the quantity in stock: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}()
 
 	// connect to client to connect to payment service to subtract the balance in the user's account
 	resp, err := oc.OrderClient.DoDeduct(totalMoneyOrder, w)
