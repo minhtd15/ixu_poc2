@@ -63,33 +63,23 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(response)
 		return
+
 	}
-
 	// update the quantity in stock
-	func() {
-		err = oc.ProductService.UpdateQuantityInStock(order.ProductID, order.TotalAmountOrder)
-		if err != nil {
-			err = oc.ProductService.UpdateQuantityInStock(order.ProductID, -order.TotalAmountOrder)
-			http.Error(w, "Cannot deduct the amount of products in stock", http.StatusBadRequest)
-			return
-		}
-	}()
-
-	defer func() {
+	err = oc.ProductService.UpdateQuantityInStock(order.ProductID, order.TotalAmountOrder)
+	if err != nil {
 		err = oc.ProductService.UpdateQuantityInStock(order.ProductID, -order.TotalAmountOrder)
-		if err != nil {
-			log.Fatalf("Error updating the quantity in stock: %v", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}()
+		http.Error(w, "Cannot deduct the amount of products in stock", http.StatusBadRequest)
+		return
+	}
 
 	// connect to client to connect to payment service to subtract the balance in the user's account
 	resp, err := oc.OrderClient.DoDeduct(totalMoneyOrder, w)
 	if err != nil {
-		log.Fatalf("Error connecting to payment service")
-		http.Error(w, err.Error(), http.StatusBadRequest)
 		// if the connection to client failed, the quantity in stock would be rehabilitated as the previous amount
 		err = oc.ProductService.UpdateQuantityInStock(order.ProductID, -order.TotalAmountOrder)
+		log.Fatalf("Error connecting to payment service")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -107,6 +97,7 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 
 		return
 	}
+
 	/*// Send message to RabbitMQ
 	orderBytes, err := json.Marshal(totalOrder)
 	if err != nil {
