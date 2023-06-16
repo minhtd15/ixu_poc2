@@ -59,6 +59,7 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 		response := entity.CheckBalanceResponse{
 			Status: "Not enough balance",
 		}
+		log.Printf("customer's account does not have enough money")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(response)
