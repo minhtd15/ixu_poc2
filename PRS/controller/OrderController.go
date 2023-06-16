@@ -65,10 +65,21 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 		return
 
 	}
+
+	// if the error occurs, the quantity in stock will be rehabilitated no matter what
+	defer func() {
+		if err != nil {
+			err = oc.ProductService.UpdateQuantityInStock(order.ProductID, -order.TotalAmountOrder)
+			if err != nil {
+				log.Fatalf("Error updating the quantity in stock: %v", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		}
+	}()
+
 	// update the quantity in stock
 	err = oc.ProductService.UpdateQuantityInStock(order.ProductID, order.TotalAmountOrder)
 	if err != nil {
-		err = oc.ProductService.UpdateQuantityInStock(order.ProductID, -order.TotalAmountOrder)
 		http.Error(w, "Cannot deduct the amount of products in stock", http.StatusBadRequest)
 		return
 	}
