@@ -109,42 +109,4 @@ func (oc *orderController) OrderController(w http.ResponseWriter, r *http.Reques
 
 		return
 	}
-
-	/*// Send message to RabbitMQ
-	orderBytes, err := json.Marshal(totalOrder)
-	if err != nil {
-		log.Fatalf()
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	err = client.RabbitSender(orderBytes, w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	msgs := client.ResponseConsumer()
-
-	for msg := range msgs {
-		response := entity.PaymentResponse{}
-		err := json.Unmarshal(msg.Body, &response)
-		if err != nil {
-			log.Printf("Failed to unmarshal response: %s", err.Error())
-			continue
-		}
-
-		// Check the response status
-		if response.Success {
-			// Payment successful
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Order successful"))
-		} else {
-			// Payment failed
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Order failed"))
-		}
-
-		// Exit the loop since we have received the response
-		break
-	} */
 }
