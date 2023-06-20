@@ -10,8 +10,6 @@ import (
 	"net/http"
 )
 
-var db *sql.DB
-
 func main() {
 	db, err := sql.Open("godror", "system/oracle@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=orclpdb1)))")
 	if err != nil {
