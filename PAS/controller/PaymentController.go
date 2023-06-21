@@ -14,13 +14,11 @@ var mu sync.Mutex
 
 type paymentController struct {
 	PaymentService *service.PaymentService
-	DB             *sql.DB
 }
 
 func NewPaymentController(paymentService *service.PaymentService, db *sql.DB) *paymentController {
 	return &paymentController{
 		PaymentService: paymentService,
-		DB:             db,
 	}
 }
 

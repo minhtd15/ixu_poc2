@@ -30,15 +30,21 @@ func (cc *cashController) CashController(w http.ResponseWriter, r *http.Request)
 
 	checkAccountBalance, err := cc.CashService.CheckBalance(transaction.SenderId, transaction.AmountMoney)
 	if err != nil {
+		response := "Error in checking the customer balance"
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
 		log.Fatalf("Error checking customer's %v account balance", transaction.SenderId)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	}
+
+	if !checkAccountBalance {
+		response := "Not enough balance"
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
 	}
 
 	// transfer the money to recipient and commission members
 	transfer := cc.CashService.TransferMoney(transaction.Sender, transaction.Recipient, transaction.AmountMoney)
 
 }
-
-
-
